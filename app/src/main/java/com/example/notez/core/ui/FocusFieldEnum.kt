@@ -16,17 +16,8 @@
  *
  */
 
-package com.example.notez
+package com.example.notez.core.ui
 
-import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
-
-@HiltAndroidApp
-class NotezApplication : Application() {
-}
-
-object AppArgs {
-    const val NOTE_TYPE_KEY = "NOTE_TYPE_EXTRA"
-    const val NOTE_ID_KEY = "NOTE_ID_EXTRA"
-    const val NEW_WINDOW_REQUEST_CODE = 1992
+enum class FocusedFieldEnum {
+    None, Title, Body
 }

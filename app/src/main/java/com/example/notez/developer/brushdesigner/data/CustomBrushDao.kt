@@ -16,17 +16,22 @@
  *
  */
 
-package com.example.notez
+package com.example.notez.developer.brushdesigner.data
 
-import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
-@HiltAndroidApp
-class NotezApplication : Application() {
-}
+@Dao
+interface CustomBrushDao {
+    @Query("SELECT * FROM custom_brushes")
+    fun getAllCustomBrushes(): Flow<List<CustomBrushEntity>>
 
-object AppArgs {
-    const val NOTE_TYPE_KEY = "NOTE_TYPE_EXTRA"
-    const val NOTE_ID_KEY = "NOTE_ID_EXTRA"
-    const val NEW_WINDOW_REQUEST_CODE = 1992
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveCustomBrush(brush: CustomBrushEntity)
+
+    @Query("DELETE FROM custom_brushes WHERE name = :name")
+    suspend fun deleteCustomBrush(name: String)
 }
