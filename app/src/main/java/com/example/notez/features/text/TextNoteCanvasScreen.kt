@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -46,6 +47,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -53,6 +55,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -89,6 +92,9 @@ import com.example.notez.core.ui.NotezUiState
 import com.example.notez.core.ui.FocusedFieldEnum
 import com.example.notez.features.home.NotePreviewParameterProvider
 
+/**
+ * Connects the text-note editor UI to its ViewModel state and image picker actions.
+ */
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
 fun TextNoteCanvasScreen(
@@ -151,7 +157,10 @@ fun TextNoteCanvasScreen(
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * Renders the full text-note editor, including the top app bar, title field, body field, and images.
+ */
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun NoteCanvasContent(
     uiState: NotezUiState,
@@ -210,6 +219,8 @@ fun NoteCanvasContent(
                 .navigationBarsPadding()
                 .imePadding()
         ) {
+            TextNoteTopAppBar(onNavigateUp = onExit)
+
             NoteCanvasTopBar(
                 titleState = titleState,
                 onTitleChange = onTitleChange,
@@ -236,6 +247,32 @@ fun NoteCanvasContent(
     }
 }
 
+/**
+ * Displays the required editor top app bar and delegates back navigation to the caller.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TextNoteTopAppBar(
+    onNavigateUp: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    TopAppBar(
+        title = { Text(stringResource(R.string.note)) },
+        navigationIcon = {
+            IconButton(onClick = onNavigateUp) {
+                Icon(
+                    painter = painterResource(R.drawable.arrow_back_24px),
+                    contentDescription = stringResource(R.string.navigate_up)
+                )
+            }
+        },
+        modifier = modifier
+    )
+}
+
+/**
+ * Shows the editable note title and overflow menu actions for images, favorites, and exit.
+ */
 @Composable
 private fun NoteCanvasTopBar(
     titleState: TextFieldValue,
@@ -296,6 +333,9 @@ private fun NoteCanvasTopBar(
     }
 }
 
+/**
+ * Provides the overflow menu for secondary text-note actions.
+ */
 @Composable
 private fun NoteCanvasDropdownMenu(
     expanded: Boolean,
@@ -368,6 +408,9 @@ private fun NoteCanvasDropdownMenu(
     }
 }
 
+/**
+ * Shows the larger text input area and any images attached to the text note.
+ */
 @Composable
 private fun NoteCanvasBody(
     note: Note,
@@ -393,10 +436,12 @@ private fun NoteCanvasBody(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 240.dp)
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                             .focusRequester(bodyFocusRequester)
                             .onFocusChanged(onBodyFocusChanged),
                     textStyle = MaterialTheme.typography.bodyLarge,
+                    minLines = 8,
                 )
             }
         }
@@ -413,6 +458,9 @@ private fun NoteCanvasBody(
     }
 }
 
+/**
+ * Displays one attached image and prepares it as drag-and-drop data.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun NoteImage(
@@ -459,6 +507,9 @@ private fun NoteImage(
     }
 }
 
+/**
+ * Preview for the text-note editor with sample note data.
+ */
 @Preview(showBackground = true)
 @Composable
 fun NoteCanvasScreenPreview(

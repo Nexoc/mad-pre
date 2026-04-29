@@ -1,0 +1,11 @@
+<!-- Back navigation icon used by the text and drawing editor top app bars. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960"
+    android:tint="?attr/colorControlNormal">
+  <path
+      android:fillColor="@android:color/white"
+      android:pathData="M400,880L0,480L400,80L471,151L191,431L960,431L960,529L191,529L471,809L400,880Z"/>
+</vector>

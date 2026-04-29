@@ -21,6 +21,9 @@ package com.example.notez.core.data
 import androidx.ink.strokes.Stroke
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Abstraction for note storage so ViewModels do not depend on Room directly.
+ */
 interface NotesRepository {
     /**
      * Retrieve all the notes from the given data source.
@@ -41,6 +44,11 @@ interface NotesRepository {
      * Update note in the data source
      */
     suspend fun updateNote(note: Note)
+
+    /**
+     * Delete note from the data source
+     */
+    suspend fun deleteNote(note: Note)
 
     /**
      * Update the strokes data of a note.

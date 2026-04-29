@@ -25,6 +25,9 @@ import com.example.notez.features.drawing.CustomBrushes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json
 
+/**
+ * Repository implementation that keeps the UI and ViewModels independent from Room details.
+ */
 class OfflineNotesRepository(
     private val notesDao: NoteDao,
     private val context: Context
@@ -32,16 +35,55 @@ class OfflineNotesRepository(
 
     private val converters = Converters()
 
+    /**
+     * Exposes the complete note list as a Flow so the Home screen updates after database changes.
+     */
     override fun getAllNotesStream(): Flow<List<Note>> = notesDao.getAllNotes()
 
+    /**
+     * Exposes a single note as a Flow so editor and detail screens react to updates.
+     */
     override fun getNoteStream(id: Long): Flow<Note?> = notesDao.getNote(id)
 
+    /**
+     * Inserts a note and assigns creation/update timestamps when the caller did not provide them.
+     */
     override suspend fun addNote(note: Note): Long {
-        return notesDao.addNote(note)
+        val now = System.currentTimeMillis()
+        val createdAtMillis = note.createdAtMillis.takeIf { it > 0L } ?: now
+        return notesDao.addNote(
+            note.copy(
+                createdAtMillis = createdAtMillis,
+                updatedAtMillis = note.updatedAtMillis.takeIf { it > 0L } ?: createdAtMillis
+            )
+        )
     }
 
-    override suspend fun updateNote(note: Note) = notesDao.updateNote(note)
+    /**
+     * Updates a note while preserving the original creation time and refreshing the modified time.
+     */
+    override suspend fun updateNote(note: Note) {
+        val existingNote = notesDao.getNoteById(note.id)
+        val createdAtMillis = existingNote?.createdAtMillis?.takeIf { it > 0L }
+            ?: note.createdAtMillis.takeIf { it > 0L }
+            ?: System.currentTimeMillis()
 
+        notesDao.updateNote(
+            note.copy(
+                createdAtMillis = createdAtMillis,
+                updatedAtMillis = System.currentTimeMillis()
+            )
+        )
+    }
+
+    /**
+     * Removes the note from Room, which also causes the Home list Flow to emit a new list.
+     */
+    override suspend fun deleteNote(note: Note) = notesDao.deleteNote(note)
+
+    /**
+     * Serializes drawing strokes into JSON and stores them on the corresponding drawing note.
+     */
     override suspend fun updateNoteStrokes(
         noteId: Long,
         strokes: List<Stroke>,
@@ -54,11 +96,18 @@ class OfflineNotesRepository(
         val note = notesDao.getNoteById(noteId)
         if (note != null) {
             val updatedNote =
-                note.copy(strokesData = strokesJson, clientBrushFamilyId = clientBrushFamilyId)
+                note.copy(
+                    strokesData = strokesJson,
+                    clientBrushFamilyId = clientBrushFamilyId,
+                    updatedAtMillis = System.currentTimeMillis()
+                )
             notesDao.updateNote(updatedNote)
         }
     }
 
+    /**
+     * Restores persisted drawing strokes from JSON for detail thumbnails and drawing editors.
+     */
     override suspend fun getNoteStrokes(noteId: Long): List<Stroke> {
         val note = notesDao.getNoteById(noteId)
         val strokesJson = note?.strokesData ?: return emptyList()
@@ -68,18 +117,34 @@ class OfflineNotesRepository(
         return strokesData.mapNotNull { converters.deserializeStrokeFromString(it, customBrushes) }
     }
 
+    /**
+     * Flips the favorite flag so the Home screen can move the note between sections.
+     */
     override suspend fun toggleFavorite(noteId: Long) {
         val note = notesDao.getNoteById(noteId)
         if (note != null) {
-            val updatedNote = note.copy(isFavorite = !note.isFavorite)
+            val updatedNote = note.copy(
+                isFavorite = !note.isFavorite,
+                updatedAtMillis = if (note.updatedAtMillis > 0L) {
+                    System.currentTimeMillis()
+                } else {
+                    note.updatedAtMillis
+                }
+            )
             notesDao.updateNote(updatedNote)
         }
     }
 
+    /**
+     * Persists image URIs attached to a note and refreshes the modified timestamp.
+     */
     override suspend fun updateNoteImageUriList(noteId: Long, imageUriList: List<String>?) {
         val note = notesDao.getNoteById(noteId)
         if (note != null) {
-            val updatedNote = note.copy(imageUriList = imageUriList)
+            val updatedNote = note.copy(
+                imageUriList = imageUriList,
+                updatedAtMillis = System.currentTimeMillis()
+            )
             notesDao.updateNote(updatedNote)
         }
     }

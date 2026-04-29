@@ -42,6 +42,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Owns Home-screen state and translates user actions into repository operations.
+ */
 @HiltViewModel
 class HomeScreenViewModel @Inject constructor(
     private val noteRepository: NotesRepository
@@ -68,6 +71,9 @@ class HomeScreenViewModel @Inject constructor(
                 initialValue = NoteListUiState()
             )
 
+    /**
+     * Loads one note into the detail pane and also fetches strokes when it is a drawing note.
+     */
     fun selectNote(noteId: Long) {
         selectNoteJob?.cancel()
         selectNoteJob = viewModelScope.launch {
@@ -94,6 +100,9 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Creates a text note and returns its generated id to the navigation callback.
+     */
     fun addNote(callback: (noteId: Long) -> Unit) {
         viewModelScope.launch {
             val newNoteId = addNoteOfType(NoteType.Text)
@@ -103,6 +112,9 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Creates a drawing note and returns its generated id to the navigation callback.
+     */
     fun addDrawingNote(callback: (id: Long) -> Unit) {
         viewModelScope.launch {
             val newNoteId = addNoteOfType(NoteType.Drawing)
@@ -112,6 +124,9 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Builds the correct initial Note object for the requested type before saving it.
+     */
     private suspend fun addNoteOfType(noteType: NoteType): Long? {
         return try {
             val newNote = Note(
@@ -131,21 +146,27 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Deletes a note from persistence and clears the detail pane if that note was selected.
+     */
     fun deleteNote(noteToDelete: Note) {
-        try {
-            viewModelScope.launch {
-                // TODO add delete note functionality
+        viewModelScope.launch {
+            try {
+                noteRepository.deleteNote(noteToDelete)
                 if (_uiState.value.note.id == noteToDelete.id) {
                     clearSelection()
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting note: ${e.message}")
+                _uiState.value =
+                    _uiState.value.copy(error = "Error deleting note: ${e.message}")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deleting note: ${e.message}")
-            _uiState.value =
-                _uiState.value.copy(error = "Error deleting note: ${e.message}")
         }
     }
 
+    /**
+     * Toggles favorite state and refreshes the selected detail note when needed.
+     */
     fun toggleFavorite(noteId: Long) {
         viewModelScope.launch {
             try {
@@ -162,11 +183,17 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Clears the currently selected detail note and cancels any previous selection collection.
+     */
     fun clearSelection() {
         selectNoteJob?.cancel()
         _uiState.update { NotezUiState() }
     }
 
+    /**
+     * Emits an event that the UI turns into a multi-window launch intent.
+     */
     fun openInNewWindow(note: Note) {
         viewModelScope.launch {
             _newWindowEvent.send(Pair(note.type, note.id))

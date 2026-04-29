@@ -23,6 +23,7 @@ import androidx.room.Room
 import coil3.ImageLoader
 import com.example.notez.core.data.MIGRATION_7_8
 import com.example.notez.core.data.MIGRATION_8_9
+import com.example.notez.core.data.MIGRATION_9_10
 import com.example.notez.core.data.NoteDatabase
 import com.example.notez.core.data.NotesRepository
 import com.example.notez.core.data.OfflineNotesRepository
@@ -39,6 +40,9 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    /**
+     * Builds the singleton Room database and registers all schema migrations.
+     */
     @Provides
     @Singleton
     fun provideNoteDatabase(@ApplicationContext context: Context): NoteDatabase {
@@ -47,16 +51,22 @@ object AppModule {
             NoteDatabase::class.java,
             NoteDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_7_8, MIGRATION_8_9)
+            .addMigrations(MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
             .build()
     }
 
+    /**
+     * Exposes the custom brush DAO for drawing-related ViewModels.
+     */
     @Provides
     @Singleton
     fun provideCustomBrushDao(database: NoteDatabase): CustomBrushDao {
         return database.customBrushDao()
     }
 
+    /**
+     * Exposes the note repository abstraction used by Home and editor ViewModels.
+     */
     @Provides
     @Singleton
     fun provideNoteRepository(
@@ -66,12 +76,18 @@ object AppModule {
         return OfflineNotesRepository(database.noteDao(), context)
     }
 
+    /**
+     * Provides a shared Coil image loader for image previews and drawing exports.
+     */
     @Provides
     @Singleton
     fun provideImageLoader(@ApplicationContext context: Context): ImageLoader {
         return ImageLoader(context)
     }
 
+    /**
+     * Provides file helpers for copying picked/dropped images into app storage.
+     */
     @Provides
     @Singleton
     fun provideFileHelper(@ApplicationContext context: Context): FileHelper {

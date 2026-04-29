@@ -73,10 +73,16 @@ import com.example.notez.features.home.viewmodel.NoteListUiState
 import kotlinx.coroutines.launch
 
 
+/**
+ * Navigation destination object for the Home pane route.
+ */
 object HomeDestination : NavigationDestination {
     override val route = "home"
 }
 
+/**
+ * Items shown in the adaptive navigation suite.
+ */
 enum class AppDestinations(
     @param:StringRes val label: Int,
     @param:DrawableRes val icon: Int,
@@ -95,6 +101,9 @@ enum class AppDestinations(
 }
 
 
+/**
+ * Coordinates Home-screen state, adaptive layout, navigation callbacks, and multi-window launches.
+ */
 @SuppressLint("NewApi")
 @OptIn(
     ExperimentalMaterial3AdaptiveApi::class,
@@ -178,6 +187,9 @@ fun HomePane(
     )
 }
 
+/**
+ * Renders either Home content or Settings content inside the adaptive navigation scaffold.
+ */
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -316,6 +328,9 @@ private fun NotezNavigationSuite(
 }
 
 
+/**
+ * Splits notes into Favorites and Others before passing them to the reusable list component.
+ */
 @Composable
 private fun ListPaneContent(
     noteList: List<Note>,
@@ -329,8 +344,8 @@ private fun ListPaneContent(
     onDeleteNote: (Note) -> Unit,
     onNewWindow: (Note) -> Unit,
 ) {
-    val favorites = emptyList<Note>()
-    val others = noteList
+    val favorites = noteList.filter { it.isFavorite }
+    val others = noteList.filterNot { it.isFavorite }
 
     NoteList(
         favorites = favorites,
@@ -347,6 +362,9 @@ private fun ListPaneContent(
     )
 }
 
+/**
+ * Shows the selected note preview in the detail pane on wider screens.
+ */
 @Composable
 private fun DetailPaneContent(
     note: Note,

@@ -25,14 +25,24 @@ import com.example.notez.core.ui.Converters
 import com.example.notez.developer.brushdesigner.data.CustomBrushDao
 import com.example.notez.developer.brushdesigner.data.CustomBrushEntity
 
+/**
+ * Main Room database containing notes and custom drawing brush definitions.
+ */
 @Database(
     entities = [Note::class, CustomBrushEntity::class],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class NoteDatabase : RoomDatabase() {
+    /**
+     * Provides DAO operations for notes.
+     */
     abstract fun noteDao(): NoteDao
+
+    /**
+     * Provides DAO operations for custom drawing brushes.
+     */
     abstract fun customBrushDao(): CustomBrushDao
 
     companion object {

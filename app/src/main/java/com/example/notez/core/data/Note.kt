@@ -25,6 +25,12 @@ import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
+/**
+ * Room entity and UI model for one note.
+ *
+ * The timestamp defaults stay at 0 so test-created empty notes remain stable;
+ * real creation and update times are assigned in the repository.
+ */
 @Parcelize
 @Serializable
 @Entity(tableName = "notes")
@@ -45,8 +51,15 @@ data class Note(
     val imageUriList: List<String>? = emptyList(),
     @ColumnInfo(name = "client_brush_family_id")
     val clientBrushFamilyId: String? = null,
+    @ColumnInfo(name = "created_at_millis")
+    val createdAtMillis: Long = 0L,
+    @ColumnInfo(name = "updated_at_millis")
+    val updatedAtMillis: Long = 0L,
 ) : Parcelable
 
+/**
+ * Distinguishes between regular text notes and drawing notes.
+ */
 enum class NoteType {
     Text,
     Drawing

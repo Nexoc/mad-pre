@@ -41,9 +41,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -65,6 +69,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -86,9 +91,13 @@ import com.example.notez.core.utils.createDropTarget
 import com.example.notez.features.drawing.viewmodel.DrawingCanvasViewModel
 
 
+/**
+ * Connects the drawing editor UI to the ViewModel, image picker, and replace-image dialog.
+ */
 @OptIn(
     ExperimentalFoundationApi::class,
-    ExperimentalMaterial3WindowSizeClassApi::class
+    ExperimentalMaterial3WindowSizeClassApi::class,
+    ExperimentalMaterial3Api::class
 )
 @Composable
 fun DrawingCanvas(
@@ -136,6 +145,7 @@ fun DrawingCanvas(
             .navigationBarsPadding()
             .imePadding()
     ) {
+        DrawingEditorTopAppBar(onNavigateUp = navigateUp)
         DrawingCanvasTopBar(drawingCanvasViewModel)
         DrawingCanvasContent(
             drawingCanvasViewModel = drawingCanvasViewModel,
@@ -145,6 +155,32 @@ fun DrawingCanvas(
     }
 }
 
+/**
+ * Displays the required drawing-editor top app bar and delegates back navigation to the caller.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DrawingEditorTopAppBar(
+    onNavigateUp: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    TopAppBar(
+        title = { Text(stringResource(R.string.drawing)) },
+        navigationIcon = {
+            IconButton(onClick = onNavigateUp) {
+                Icon(
+                    painter = painterResource(R.drawable.arrow_back_24px),
+                    contentDescription = stringResource(R.string.navigate_up)
+                )
+            }
+        },
+        modifier = modifier
+    )
+}
+
+/**
+ * Shows the editable drawing note title above the drawing surface.
+ */
 @Composable
 private fun DrawingCanvasTopBar(
     drawingCanvasViewModel: DrawingCanvasViewModel,
@@ -189,6 +225,9 @@ private fun DrawingCanvasTopBar(
     }
 }
 
+/**
+ * Places the drawing surface and adapts the toolbox orientation to the current window size.
+ */
 @OptIn(
     ExperimentalMaterial3WindowSizeClassApi::class,
     ExperimentalFoundationApi::class
@@ -270,6 +309,9 @@ private fun DrawingCanvasContent(
     }
 }
 
+/**
+ * Hosts the Ink drawing surface, drag-and-drop target, background image, and export bitmap refresh.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DrawingSurfaceWithTarget(
@@ -376,6 +418,9 @@ private fun DrawingSurfaceWithTarget(
     }
 }
 
+/**
+ * Preview for the drawing editor structure without needing the Ink runtime ViewModel.
+ */
 @Preview(showBackground = true)
 @Composable
 fun DrawingCanvasPreview() {

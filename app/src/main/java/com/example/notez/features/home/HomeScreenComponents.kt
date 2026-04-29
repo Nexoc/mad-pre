@@ -76,7 +76,13 @@ import com.example.notez.core.data.Note
 import com.example.notez.core.data.NoteType
 import com.example.notez.core.ui.theme.NotezAppTheme
 import com.example.notez.features.drawing.DrawingDetailThumbnail
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+/**
+ * Hosts the scrollable note list and the expanding button for creating notes.
+ */
 @Composable
 fun NoteList(
     favorites: List<Note>,
@@ -127,6 +133,9 @@ fun NoteList(
     }
 }
 
+/**
+ * Renders Favorites and Others with LazyColumn so large note collections stay efficient.
+ */
 @Composable
 private fun NoteListContent(
     favorites: List<Note>,
@@ -139,19 +148,24 @@ private fun NoteListContent(
     onNewWindow: (Note) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
 
         if (favorites.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.favorites),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+            item(key = "favorites_header") {
+                Text(
+                    text = stringResource(R.string.favorites),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
 
-            favorites.forEach { note ->
+            items(
+                items = favorites,
+                key = { note -> note.id }
+            ) { note ->
                 NoteItem(
                     note = note,
                     isCompact = isCompact,
@@ -165,15 +179,20 @@ private fun NoteListContent(
         }
 
         if (otherNotes.isNotEmpty()) {
-            AnimatedVisibility(favorites.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.other_notes),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+            item(key = "other_notes_header") {
+                AnimatedVisibility(favorites.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.other_notes),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
             }
 
-            otherNotes.forEach { note ->
+            items(
+                items = otherNotes,
+                key = { note -> note.id }
+            ) { note ->
                 NoteItem(
                     note = note,
                     isCompact = isCompact,
@@ -189,6 +208,9 @@ private fun NoteListContent(
 }
 
 
+/**
+ * Draws one clickable note card and keeps the action row reusable for text and drawing notes.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteItem(
@@ -217,44 +239,63 @@ fun NoteItem(
     }
 }
 
+/**
+ * Lays out the note card body as title, description, and timestamp.
+ */
 @Composable
 private fun NoteItemContent(
     note: Note,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
-        Text(
-            text = note.title.ifBlank { stringResource(R.string.untitled_note) },
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+    Row(
+        verticalAlignment = Alignment.Top,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        note.imageUriList?.firstOrNull()?.let { imageUri ->
+            AsyncImage(
+                model = imageUri,
+                contentDescription = stringResource(R.string.note_image_preview),
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.media)
+            )
+            Spacer(Modifier.width(12.dp))
+        }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        ) {
-            if (!note.imageUriList.isNullOrEmpty()) {
-                note.imageUriList.forEach { imageUri ->
-                    AsyncImage(
-                        model = imageUri,
-                        contentDescription = stringResource(R.string.note_image_preview),
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        contentScale = ContentScale.Crop,
-                        placeholder = painterResource(id = R.drawable.media)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                }
-            }
+        Column(modifier = Modifier.weight(1f)) {
+            val timestampText = formatNoteTimestamp(note.updatedAtMillis)
+
+            Text(
+                text = note.title.ifBlank { stringResource(R.string.untitled_note) },
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(Modifier.height(4.dp))
+
             NoteItemBody(note)
+
+            Spacer(Modifier.height(8.dp))
+
+            if (timestampText.isNotEmpty()) {
+                Text(
+                    text = timestampText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
 
+/**
+ * Chooses the short card description based on whether the note is text or drawing.
+ */
 @Composable
 private fun NoteItemBody(
     note: Note,
@@ -294,6 +335,18 @@ private fun NoteItemBody(
     }
 }
 
+/**
+ * Converts persisted milliseconds to the required Home-card timestamp format.
+ */
+private fun formatNoteTimestamp(timestampMillis: Long): String {
+    if (timestampMillis <= 0L) return ""
+    val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())
+    return formatter.format(Date(timestampMillis))
+}
+
+/**
+ * Shows card actions for favorite toggle, deletion, and optional multi-window opening.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NoteItemActions(
@@ -379,6 +432,9 @@ private fun NoteItemActions(
     }
 }
 
+/**
+ * Shows the larger selected-note preview used by the detail pane.
+ */
 @Composable
 fun NoteDetail(
     note: Note,
@@ -426,6 +482,9 @@ fun NoteDetail(
     }
 }
 
+/**
+ * Provides an expandable floating action button for choosing text or drawing note creation.
+ */
 @Composable
 fun NotezFloatingButton(
     expanded: MutableState<Boolean>,
@@ -465,6 +524,9 @@ fun NotezFloatingButton(
     }
 }
 
+/**
+ * Shows the two concrete creation actions after the main floating action button expands.
+ */
 @Composable
 private fun ExpandedFabContent(
     onTextNoteSelected: () -> Unit,
@@ -529,6 +591,9 @@ private fun ExpandedFabContent(
     }
 }
 
+/**
+ * Preview for the complete note list with sample text and drawing notes.
+ */
 @Preview(showBackground = true)
 @Composable
 fun NoteListPreview(
@@ -574,6 +639,9 @@ fun NoteListPreview(
     }
 }
 
+/**
+ * Preview for an individual note card using the preview parameter provider.
+ */
 @Preview(showBackground = true)
 @Composable
 fun NoteItemPreview(

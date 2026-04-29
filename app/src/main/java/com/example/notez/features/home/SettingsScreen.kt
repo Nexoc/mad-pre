@@ -39,17 +39,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.activity
-import com.example.notez.MainActivity
 import com.example.notez.R
 import com.example.notez.features.home.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * Displays settings related to the Android Notes role and safely handles role requests.
+ */
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -57,14 +58,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val activity = context as MainActivity
-
-    val isDebugMode = activity.intent.extras!!.getBoolean("debug_mode")
-
     val isRoleAvailable by viewModel.isRoleAvailable.collectAsStateWithLifecycle()
     val isRoleHeld by viewModel.isRoleHeld.collectAsStateWithLifecycle()
-    LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     val requestRoleLauncher = rememberLauncherForActivityResult(
